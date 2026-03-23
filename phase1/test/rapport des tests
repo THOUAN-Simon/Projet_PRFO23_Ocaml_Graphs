@@ -1,0 +1,151 @@
+- base_ex:
+
+9
+module_1 module_2 2
+module_1 module_4 1
+module_1 module_6 10
+module_1 module_7 3
+module_2 module_5 4
+module_3 module_6 4
+module_3 module_7 1
+module_4 module_5 2
+module_6 module_7 8
+module_1 module_6
+
+RESULTAT base_ex : 
+
+8 : module_1 -> module_7 -> module_3 -> module_6
+
+- base_ex2:
+
+17
+module_1 module_2 14
+module_1 module_3 12
+module_1 module_4 27
+module_1 module_6 5
+module_1 module_8 13
+module_2 module_4 1
+module_3 module_4 2
+module_3 module_5 3
+module_3 module_6 9
+module_4 module_10 3
+module_5 module_8 7
+module_5 module_10 9
+module_6 module_7 5
+module_7 module_8 6
+module_7 module_10 4
+module_8 module_9 7
+module_9 module_10 1
+module_1 module_10
+
+RESULTAT base_ex2 : 
+
+14 : module_1 -> module_6 -> module_7 -> module_10
+
+Vérifie que l'algorithme privilégie le poids total le plus faible (10) plutôt que le nombre de sauts le plus petit (100)
+- base_ex3:
+
+3
+A C 100
+A B 5
+B C 5
+A C
+
+RESULTAT base_ex3 : 
+
+10 : A -> B -> C
+
+Vérifie la bonne levée de l'exception Not_found lorsqu'aucun chemin n'existe
+- base_ex4:
+
+2
+A B 3
+C D 50
+A C
+
+RESULTAT base_ex4 : 
+
+Erreur : Aucun chemin trouvé ou module inconnu.
+
+Valide le cas trivial où la distance est nulle et le chemin ne contient qu'un seul module
+- base_ex5:
+
+1
+A B 10
+A A
+
+RESULTAT base_ex5 : 
+
+0 : A
+
+Vérifie que l'algorithme ne se bloque pas dans une branche qui semble prometteuse localement mais qui est sans issue
+- base_ex6:
+
+4
+A B 1
+A C 5
+C D 5
+B E 1
+A D
+
+RESULTAT base_ex6 : 
+
+10 : A -> C -> D
+
+Teste la capacité de l'algorithme (récursion et reconstruction) sur un graphe linéaire moyennement profond
+- base_ex7:
+
+5
+A B 1
+B C 1
+C D 1
+D E 1
+E F 1
+A F
+
+RESULTAT base_ex7 : 
+
+5 : A -> B -> C -> D -> E -> F
+
+S'assure que les tunnels de poids nul sont traversés correctement sans causer de boucles infinies
+- base_ex8:
+
+3
+A B 10
+B C 0
+C D 10
+A D
+
+RESULTAT base_ex8 : 
+
+20 : A -> B -> C -> D
+
+Confirme que l'algorithme trouve l'optimum global même si le premier pas semble plus coûteux (l'algorithme n'est donc pas glouton)
+- base_ex9:
+
+4
+A B 1
+B D 100
+A C 10
+C D 10
+A D
+
+RESULTAT base_ex9 : 
+
+20 : A -> C -> D
+
+Vérifie la stabilité de l'algorithme lorsqu'il existe plusieurs chemins valides de même poids exact
+- base_ex10:
+
+4
+A B 5
+B D 5
+A C 5
+C D 5
+A D
+
+RESULTAT base_ex10 : 
+
+10 : A -> B -> D
+
+

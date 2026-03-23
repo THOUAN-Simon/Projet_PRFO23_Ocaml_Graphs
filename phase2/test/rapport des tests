@@ -1,0 +1,178 @@
+- base_ex:
+
+9
+module_1 module_2 2
+module_1 module_4 1
+module_1 module_7 3
+module_1 module_6 10
+module_2 module_5 4
+module_3 module_7 1
+module_3 module_6 4
+module_4 module_5 2
+module_6 module_7 8
+3
+module_1 -> module_2 -> module_5 -> module_4 -> module_1 -> module_7
+module_1 -> module_2 -> module_5 -> module_4
+module_1 -> module_6 -> module_7 -> module_3 -> module_6 -> module_7
+
+
+RESULTAT base_ex : 
+
+module_1 -0-> module_2 -2-> module_5 -6-> module_4 -8-> module_1 -9-> module_7
+module_1 -2-> module_2 -6-> module_5 -10-> module_4
+module_1 -0-> module_6 -10-> module_7 -18-> module_3 -19-> module_6 -23-> module_7
+31
+
+- base_ex2:
+
+3
+A B 10
+B C 20
+C D 10
+2
+A -> B -> C -> D
+C -> B
+
+RESULTAT base_ex2 : 
+
+A -0-> B -10-> C -30-> D
+C -30-> B
+50
+
+Vérifie que l'explorateur avec le trajet le plus long est prioritaire lors d'un départ simultané
+- base_ex3:
+
+2
+A B 10
+B C 10
+2
+A -> B
+A -> B -> C
+
+RESULTAT base_ex3 : 
+
+A -10-> B
+A -0-> B -10-> C
+20
+
+Confirme la propriété suivante des tunnels : on ne peut pas le traverser dans le sens inverse s'il est déjà occupé
+- base_ex4:
+
+1
+A B 20
+2
+A -> B
+B -> A
+
+
+RESULTAT base_ex4 : 
+
+A -0-> B
+B -20-> A
+40
+
+Teste l'enchaînement séquentiel correct de plusieurs explorateurs sur un chemin identique
+- base_ex5:
+
+2
+A B 5
+B C 5
+3
+A -> B -> C
+A -> B -> C
+A -> B -> C
+
+RESULTAT base_ex5 : 
+
+A -0-> B -5-> C
+A -10-> B -15-> C
+A -5-> B -10-> C
+20
+
+Vérifie que des groupes sans tunnels communs naviguent en parallèle sans s'attendre
+- base_ex6:
+
+2
+A B 10
+C D 50
+2
+A -> B
+C -> D
+
+RESULTAT base_ex6 : 
+
+A -0-> B
+C -0-> D
+50
+
+Teste la gestion de la table de réservation ReservationsMap quand plusieurs chemins convergent vers un unique tunnel central
+- base_ex7:
+
+5
+A C 5
+B C 5
+C D 10
+D E 5
+D F 5
+2
+A -> C -> D -> E
+B -> C -> D -> F
+
+RESULTAT base_ex7 : 
+
+A -0-> C -5-> D -15-> E
+B -0-> C -15-> D -25-> F
+30
+
+Vérifie qu'un explorateur non prioritaire peut passer avant un prioritaire si le créneau est libre avant l'arrivée du prioritaire
+- base_ex8:
+
+3
+B A 100
+C A 10
+A B 50
+2
+B -> A -> B
+C -> A -> B
+
+RESULTAT base_ex8 : 
+
+B -0-> A -50-> B
+C -0-> A -100-> B
+150
+
+Teste la capacité de l'algorithme à combler les créneaux libres entre deux réservations existantes
+- base_ex9:
+
+1
+A B 100
+3
+A -> B
+A -> B
+A -> B
+
+RESULTAT base_ex9 : 
+
+A -0-> B
+A -200-> B
+A -100-> B
+300
+
+Vérifie qu'un même agent peut réserver plusieurs fois le même tunnel à des moments différents sans conflit
+- base_ex10:
+
+3
+A B 10
+B C 10
+C A 10
+2
+A -> B -> C -> A -> B
+A -> B
+
+RESULTAT base_ex10 : 
+
+A -0-> B -10-> C -20-> A -30-> B
+A -10-> B
+40
+
+

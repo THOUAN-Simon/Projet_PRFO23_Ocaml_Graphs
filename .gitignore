@@ -1,0 +1,15 @@
+# === OCaml (Binaires et Objets) ===
+*.cmi
+*.cmo
+*.cmx
+*.o
+
+# === Exécutables ===
+base
+phase1/base
+phase2/base
+
+# === Divers ===
+.DS_Store
+*~
+*.log

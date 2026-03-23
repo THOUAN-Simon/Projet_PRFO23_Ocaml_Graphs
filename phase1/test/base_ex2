@@ -1,0 +1,19 @@
+17
+module_1 module_2 14
+module_1 module_3 12
+module_1 module_4 27
+module_1 module_6 5
+module_1 module_8 13
+module_2 module_4 1
+module_3 module_4 2
+module_3 module_5 3
+module_3 module_6 9
+module_4 module_10 3
+module_5 module_8 7
+module_5 module_10 9
+module_6 module_7 5
+module_7 module_8 6
+module_7 module_10 4
+module_8 module_9 7
+module_9 module_10 1
+module_1 module_10

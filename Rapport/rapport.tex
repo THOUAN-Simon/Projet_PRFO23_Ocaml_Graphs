@@ -1,0 +1,204 @@
+\documentclass[a4paper,11pt]{article}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage[french]{babel}
+\usepackage{geometry}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{listings}
+\usepackage{xcolor}
+\usepackage[linesnumbered,ruled,vlined]{algorithm2e}
+\usepackage{float}
+
+% Configuration de la mise en page
+\geometry{hmargin=2.5cm,vmargin=2.5cm}
+
+% Configuration pour l'affichage du code
+\definecolor{codegray}{rgb}{0.5,0.5,0.5}
+\definecolor{codegreen}{rgb}{0,0.6,0}
+\definecolor{backcolour}{rgb}{0.95,0.95,0.92}
+
+\lstdefinestyle{mystyle}{
+    backgroundcolor=\color{backcolour},   
+    commentstyle=\color{codegreen},
+    keywordstyle=\color{magenta},
+    numberstyle=\tiny\color{codegray},
+    stringstyle=\color{purple},
+    basicstyle=\ttfamily\footnotesize,
+    breakatwhitespace=false,         
+    breaklines=true,                 
+    captionpos=b,                    
+    keepspaces=true,                 
+    numbers=left,                    
+    numbersep=5pt,                  
+    showspaces=false,                
+    showstringspaces=false,
+    showtabs=false,                  
+    tabsize=2
+}
+\lstset{style=mystyle}
+
+\title{\textbf{Rapport de Projet : projet PRFO23}}
+\author{THOUAN Simon \\ \small{FOREST Julien}}
+\date{\today}
+
+\begin{document}
+
+\tableofcontents
+\newpage
+
+\section{Introduction}
+
+Le but de ce projet est de concevoir un système de planification de déplacements pour une base martienne. Cette base est constituée de modules reliés par des tunnels ne permettant le passage que d'une personne à la fois.
+
+Le projet se décompose en plusieurs phases de complexité croissante :
+\begin{itemize}
+    \item \textbf{Phase 1 :} Gestion du déplacement d'un individu unique en minimisant le temps de parcours.
+    \item \textbf{Phase 2 :} Gestion de plusieurs individus avec des itinéraires pré-définis, en évitant les collisions dans les tunnels et en minimisant le temps total
+    \item \textbf{Phase 3 :} Planification autonome des itinéraires pour plusieurs individus (non traité dans ce rapport, l'accent étant mis sur les deux premières phases implémentées).
+\end{itemize}
+
+Ce rapport présente les choix de structures de données, détaille les algorithmes utilisés (Dijkstra et Ordonnancement Glouton) et analyse les résultats obtenus lors des tests.
+
+\section{Choix d'implémentation et Structures de données}
+
+Le choix du langage OCaml nous a orientés vers des structures de données immuables et persistantes, favorisant la récursion, dont l'implantation se repose
+au maximum sur la bibliothèque standard d'Ocaml, via l'utilisations des modules Map et Set.
+
+\subsection{Représentation de la Base (Graphe)}
+La base est représentée comme un graphe non orienté pondéré. Nous avons utilisé le module \texttt{Map} de la librairie standard.
+\begin{itemize}
+    \item \textbf{Tunnels :} Une \texttt{Map} associant chaque module (chaîne de caractères) à un \texttt{Set} de ses voisins accessibles.
+    \item \textbf{Poids :} Une \texttt{Map} dont la clé est une paire de modules $(M_1, M_2)$ dont la fonction de comparaison repose sur l'ordre 
+    lexicographique, et la valeur est le temps de traversée (entier).
+\end{itemize}
+
+\subsection{File de Priorité}
+Pour l'algorithme de Dijkstra (Phase 1), une file de priorité efficace est indispensable. Nous avons implémenté un tas binaire (Heap) via le foncteur \texttt{MakeHeap} plutôt qu'une simple liste triée. Cela permet d'effectuer les opérations d'ajout et d'extraction du minimum avec une meilleure complexité temporelle.
+
+\subsection{Table de Réservation (Phase 2)}
+Pour gérer les conflits d'accès aux tunnels, nous avons introduit une structure \texttt{ReservationsMap}. Elle associe à chaque tunnel une liste d'intervalles de temps occupés $[t_{début}, t_{fin}]$. Cette structure permet de vérifier rapidement la disponibilité d'un tunnel pour un créneau donné.
+
+\section{Description des Algorithmes}
+
+\subsection{Phase 1 : Recherche du plus court chemin (Dijkstra)}
+Pour trouver le chemin le plus rapide entre deux modules, nous avons implémenté l'algorithme de Dijkstra. L'approche est fonctionnelle récursive, utilisant des accumulateurs pour les distances et les parents.
+
+\begin{algorithm}[H]
+\SetAlgoLined
+\KwIn{Graphe, Départ, Arrivée}
+\KwOut{Distance, Chemin}
+ \textbf{Initialisation :}\\
+ - Distances : Map (Départ $\rightarrow$ 0, autres $\rightarrow$ $\infty$)\;
+ - Parents : Map vide\;
+ - File : File de priorité avec (Départ, 0)\;
+ 
+ \SetKwProg{Fn}{Fonction}{ is}{end}
+ \Fn{dijkstra (Distances, Parents, File)}{
+    \eIf{File est vide}{
+        Lever Exception Not\_found (aucun chemin)\;
+    }{
+        (u, DistU), ResteFile $\leftarrow$ extraire minimum de File\;
+        \If{u = Arrivée}{
+            \Return (DistU, reconstruire\_chemin(Parents, Arrivée))\;
+        }
+        \eIf{DistU > Distances[u]}{
+            dijkstra(Distances, Parents, ResteFile)\;
+        }{
+            \ForEach{Voisin de u}{
+                NouvDist $\leftarrow$ DistU + Poids(u, Voisin)\;
+                \If{NouvDist < Distances[Voisin]}{
+                    Mettre à jour Distances[Voisin] $\leftarrow$ NouvDist\;
+                    Mettre à jour Parents[Voisin] $\leftarrow$ u\;
+                    Ajouter (Voisin, NouvDist) à ResteFile\;
+                }
+            }
+            dijkstra(Distances, Parents, ResteFile)\;
+        }
+    }
+ }
+ \caption{Algorithme de Dijkstra (Phase 1)}
+\end{algorithm}
+
+\subsection{Phase 2 : Ordonnancement}
+Pour la gestion de plusieurs explorateurs, nous utilisons une stratégie gloutonne. 
+L'idée est de prioriser les explorateurs ayant le trajet le plus long afin qu'ils ne soient pas bloqués
+ de manière répétée par des trajets courts, optimisant ainsi le temps global.
+
+\begin{algorithm}[H]
+\SetAlgoLined
+\KwIn{Liste des Chemins}
+\KwOut{Liste (Chemin, Horaires), TempsTotal}
+
+ \textbf{Préparation :}\\
+ - Calculer la longueur totale de chaque chemin (fonction \texttt{path\_length})\;
+ - Trier les explorateurs par priorité décroissante (plus long chemin en premier)\;
+ - Initialiser Reservations (Map vide) et Resultats (vide)\;
+ 
+ \textbf{Ordonnancement :}\\
+ \ForEach{Explorateur dans ListeTriée}{
+    TempsCourant $\leftarrow$ 0\;
+    \ForEach{Tunnel (A, B) du chemin}{
+        Durée $\leftarrow$ Poids(A, B)\;
+        \tcc{Recherche récursive du premier créneau libre}
+        \While{Conflit dans Reservations pour (A, B) entre [TempsCourant, TempsCourant + Durée]}{
+            TempsCourant $\leftarrow$ Fin de l'intervalle conflictuel\;
+        }
+        Ajouter l'intervalle [TempsCourant, TempsCourant + Durée] dans Reservations pour (A, B)\;
+        Enregistrer le temps de départ pour ce segment\;
+        TempsCourant $\leftarrow$ TempsCourant + Durée\;
+    }
+    Ajouter (Chemin, Horaires) aux Resultats\;
+    Mettre à jour TempsGlobal = Max(TempsGlobal, TempsArrivée)\;
+ }
+ 
+ \textbf{Finalisation :}\\
+ Trier Resultats par index croissant (ordre initial)\;
+ \Return (Resultats, TempsGlobal)\;
+ 
+ \caption{Algorithme d'Ordonnancement (Phase 2)}
+\end{algorithm}
+
+\section{Tests et Résultats}
+
+Nous avons effectué quelques tests pour valider la robustesse de nos algorithmes. Les fichiers de tests sont structurés pour vérifier des cas limites et des propriétés spécifiques.
+
+\subsection{Validation de la Phase 1 (Dijkstra)}
+Les tests de la phase 1 (fichiers \texttt{base\_ex}) ont permis de vérifier les points suivants:
+\begin{itemize}
+    \item \textbf{Cycles et détours :} L'algorithme ne boucle pas infiniment et trouve le chemin optimal même en présence de cycles (ex: \texttt{base\_ex8}).
+    \item \textbf{Poids nuls :} Gestion correcte des tunnels à durée 0 (ex: \texttt{base\_ex7}, \texttt{base\_ex8}).
+    \item \textbf{Absence de chemin :} Levée correcte de l'exception \texttt{Not\_found} si la destination est inatteignable (ex: \texttt{base\_ex4}).
+    \item \textbf{Chemins multiples :} Stabilité du choix lorsque plusieurs chemins ont le même poids (ex: \texttt{base\_ex9}).
+\end{itemize}
+
+\subsection{Validation de la Phase 2 (Ordonnancement)}
+Les tests de la phase 2 ont mis en évidence la gestion des conflits temporels:
+\begin{itemize}
+    \item \textbf{Priorité :} L'explorateur avec le trajet le plus long passe en priorité lors d'un départ simultané, réduisant l'attente globale (ex: \texttt{base\_ex2}).
+    \item \textbf{Sens unique temporel :} Un tunnel occupé dans le sens $A \to B$ bloque aussi le sens $B \to A$ (ex: \texttt{base\_ex4}).
+    \item \textbf{Parallélisme :} Des groupes sans tunnels communs naviguent en parallèle sans s'attendre, le temps total n'est pas la somme des temps individuels (ex: \texttt{base\_ex6}).
+    \item \textbf{Attente forcée :} Un explorateur non prioritaire peut s'insérer avant un prioritaire si le créneau est libre suffisamment tôt, optimisant l'utilisation des ressources (ex: \texttt{base\_ex7}).
+\end{itemize}
+
+\section{Problèmes Techniques et Solutions}
+
+\paragraph{Représentation des tunnels non orientés :}
+Une difficulté majeure a été la gestion des clés dans la \texttt{Map} des poids. Le tunnel $A \to B$ est le même que $B \to A$. Pour éviter les duplications ou les erreurs de recherche, nous avons implémenté une fonction simple de normalisation \texttt{get\_tunnel\_key} qui ordonne lexicographiquement les deux modules avant de créer la clé. Ainsi, $(A, B)$ et $(B, A)$ produisent toujours la clé $(A, B)$.
+
+\section{Limites et Conclusion}
+
+Le programme répond efficacement aux exigences des Phases 1 et 2. L'utilisation d'algorithmes fonctionnels purs garantit la sûreté du code.
+
+Cependant, notre solution présente certaines limites :
+\begin{itemize}
+    \item \textbf{Approche Gloutonne :} Pour la Phase 2, nous utilisons une heuristique (priorité au plus long chemin). Bien que performante, elle ne garantit pas l'optimum global absolu pour tous les cas de figure.
+    \item \textbf{Limites de la récursion :} Sur de grands graphes, la récursion pourrait atteindre la limite de la pile d'appel, et bien que l'usage de la récursion terminale limite ce risque, l'algorithme pourra difficilement supporter des graphes très lourds.
+    \item \textbf{Phase 3 :} L'autonomie complète (calcul des itinéraires ET ordonnancement simultané) n'a pas été pleinement intégrée, le système actuel reposant sur des chemins pré-calculés pour l'ordonnancement.
+\end{itemize}
+
+En conclusion, ce projet a permis de mettre en œuvre des structures de données avancées en OCaml et de résoudre un problème d'optimisation concret via une modélisation par graphes efficace.
+Il a permis de mettre en oeuvres les différentes structures de données (notamment mais sans s'y limiter, les Map, les Set et le module Priority qui à été codé en TP) et techniques (notamment l'usage de fold sur différentes structures) vues en cours dans un cas concret.
+
+\end{document}
